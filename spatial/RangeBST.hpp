@@ -11,9 +11,32 @@ namespace spatial {
 template <typename Point>
 class RangeBST : public SpatialBase<Point> {
  private:
+  struct node
+  {
+    Point data;
+    node* left = nullptr;
+    node* right = nullptr;
+
+    node(const Point& point):
+      data(point)
+    {};
+  };
+
+  node* root = nullptr;
+
  public:
   RangeBST(){};
-  void insert(const Point& new_point) override {}
+  void insert(const Point& new_point) override
+  {
+    if(root == nullptr)
+      root = new node(new_point);
+    else
+    {
+      node* parent = root;
+      node* children = new node(new_point);
+      //TODO
+    }
+  }
 
   // El punto de referencia no necesariamente es parte del dataset
   Point nearest_neighbor(const Point& reference) override { return Point({0}); }
@@ -24,3 +47,5 @@ class RangeBST : public SpatialBase<Point> {
 
 }  // namespace spatial
 }  // namespace utec
+
+// vim: sw=2 et :
