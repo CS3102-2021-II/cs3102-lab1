@@ -13,9 +13,11 @@ class BSTree;
 
 template <typename key_t, typename T>
 class Node {
+public:
   key_t key;
   T data;
 
+private:
   Node<key_t, T>* parent = nullptr;
   Node<key_t, T>* left = nullptr;
   Node<key_t, T>* right = nullptr;
@@ -43,10 +45,11 @@ class Iterator
 {
   using node_t = Node<key_t, T>;
 
-  node_t* node;
   std::stack<int> parents;
 
 public:
+  node_t* node;
+
   Iterator<key_t, T>():
     node(nullptr)
   {}
@@ -365,6 +368,12 @@ public:
     return {};
   }
 
+  iterator_t lower_bound(key_t key) noexcept
+  {
+    //TODO
+    return {};
+  }
+
   ~BSTree() noexcept
   {
     if(root != nullptr)
@@ -393,8 +402,15 @@ class RangeBST : public SpatialBase<Point> {
   // El punto de referencia no necesariamente es parte del dataset
   Point nearest_neighbor(const Point& reference) override { return Point({0}); }
   std::vector<Point> range(const Point& min, const Point& max) override {
-    // TODO
-    return {};
+    std::vector<Point> points;
+
+    for(auto it = tree.lower_bound(min); it != tree.end() && (it.node->key < max || it.node->key == max); ++it)
+    //for(auto it = tree.begin(); it != tree.end() && (it.node->key < max || it.node->key == max); ++it)
+    {
+        points.push_back(it.node->data);
+    }
+
+    return points;
   };
 };
 
