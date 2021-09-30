@@ -47,8 +47,14 @@ class Iterator
 
   std::stack<int> parents;
 
-public:
   node_t* node;
+
+  template<typename, typename>
+  friend class BSTree;
+
+  template<typename>
+  friend class RangeBST;
+public:
 
   Iterator<key_t, T>():
     node(nullptr)
@@ -370,8 +376,45 @@ public:
 
   iterator_t lower_bound(key_t key) noexcept
   {
-    //TODO
-    return {};
+    if(root == nullptr)
+      return {};
+
+    iterator_t it;
+
+    it.node = root;
+    it.parents.push(0);
+
+    while(!(it.node->data == key))
+    {
+      node_t* next_node;
+      int next_top;
+
+      if(key < it.node->data)
+      {
+        // Left
+        next_node = it.node->left;
+        next_top = 0;
+      }
+      else
+      {
+        // Right
+        next_node = it.node->right;
+        next_top = 1;
+      }
+
+      if(next_node == nullptr)
+      {
+        it.parents.push(1);
+        while(it.node->data < key)
+          ++it;
+        break;
+      }
+
+      it.node = next_node;
+      it.parents.push(next_top);
+    }
+
+    return it;
   }
 
   ~BSTree() noexcept
@@ -405,9 +448,8 @@ class RangeBST : public SpatialBase<Point> {
     std::vector<Point> points;
 
     for(auto it = tree.lower_bound(min); it != tree.end() && (it.node->key < max || it.node->key == max); ++it)
-    //for(auto it = tree.begin(); it != tree.end() && (it.node->key < max || it.node->key == max); ++it)
     {
-        points.push_back(it.node->data);
+      points.push_back(it.node->data);
     }
 
     return points;
