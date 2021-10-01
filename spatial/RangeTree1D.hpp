@@ -205,13 +205,14 @@ class RangeTree {
     std::vector<node_t*> nodes;
 
     while (node != nullptr) {
-      if (min.get(0) < node->key.get(0)) {
-        nodes.insert(nodes.begin(), node);
+      if (min.get(0) <= node->key.get(0)) {
+        if (node->left != nullptr) nodes.insert(nodes.begin(), node);
         node = node->left;
       } else if (min.get(0) > node->key.get(0)) {
         node = node->right;
-      } else {
-        if (node->left == nullptr) rangeLeft.push_back(node->key);
+      }
+      if (node != nullptr && min == node->key && node->left == nullptr) {
+        rangeLeft.push_back(node->key);
         node = node->left;
       }
     }
@@ -219,7 +220,7 @@ class RangeTree {
     for (node_t* nod : nodes) {
       std::vector<key_t> elems = getLeaves(nod->right);
       for (key_t elem : elems) {
-        rangeLeft.insert(rangeLeft.begin(), elem);
+        rangeLeft.push_back(elem);
       }
     }
 
@@ -229,18 +230,19 @@ class RangeTree {
   std::vector<key_t> rangeRight(node_t* ancient, key_t max) {
     node_t* node = ancient->right;
     std::vector<key_t> rangeRight;
-
     while (node != nullptr) {
       if (max.get(0) > node->key.get(0)) {
-        std::vector<key_t> elems = getLeaves(node->left);
-        for (key_t elem : elems) {
-          rangeRight.push_back(elem);
+        if (node->right != nullptr) {
+          std::vector<key_t> elems = getLeaves(node->left);
+          for (key_t elem : elems) {
+            rangeRight.push_back(elem);
+          }
         }
         node = node->right;
       } else if (max.get(0) < node->key.get(0)) {
         node = node->left;
       } else {
-        if (node->left == nullptr) rangeRight.push_back(node->key);
+        if (node->right == nullptr) rangeRight.push_back(node->key);
         node = node->left;
       }
     }
@@ -275,9 +277,7 @@ class RangeTree {
   void insert(key_t key) { insert_node(head, key); }
 
   std::vector<key_t> range(key_t min, key_t max) {
-    std::vector<key_t> points;
-    points = getRange(head, min, max);
-    return points;
+    return getRange(head, min, max);
   }
 };
 
