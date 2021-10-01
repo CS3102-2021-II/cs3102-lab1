@@ -17,6 +17,7 @@ template <typename key_t>
 class Node {
  public:
   key_t key;
+  int height;
   Node<key_t>* right = nullptr;
   Node<key_t>* left = nullptr;
 
@@ -40,16 +41,12 @@ class RangeTree {
   node_t* head;
   char lastWeight;
 
-  bool empty() {
-    if (head == nullptr) return true;
-    return false;
-  }
-
   bool insert_node(node_t* node, key_t key) {
     if (node == nullptr) {
       node_t* newNode = new node_t;
       if (newNode != nullptr) newNode->key = key;
       head = newNode;
+      head->height = 1;
       return true;
     } else {
       node_t* temp = node;
@@ -66,10 +63,15 @@ class RangeTree {
         }
       }
       node_t* newNode = new node_t;
+      newNode->height = 1;
       if (newNode != nullptr) newNode->key = key;
-      temp = newNode;
+      if (direction == 'r')
+        parent->right = newNode;
+      else
+        parent->left = newNode;
 
       node_t* otherNode = new node_t;
+      otherNode->height = 1;
       if (direction == 'l') {
         auto value = parent->key;
         parent->key = key;
@@ -79,9 +81,94 @@ class RangeTree {
         otherNode->key = parent->key;
         parent->left = otherNode;
       }
+      allHeight(head);
+      head = balanceTree(head);
 
-      balanceTree();
       return true;
+    }
+  }
+
+  node_t* balanceTree(node_t* node) {
+    if (weight(node) == 2 && weight(node->left) == 1) {
+      node = doRightRotationSimple(node);
+    } else if (weight(node) == -2 && weight(node->right) == -1) {
+      node = doLeftRotationSimple(node);
+    } else if (weight(node) == -2 && weight(node->right) == 1) {
+      node = doRightLeftRotation(node);
+    } else if (weight(node) == 2 && weight(node->left) == -1) {
+      node = doLeftRightRotation(node);
+    }
+    if (node->right != nullptr) node->right = balanceTree(node->right);
+    if (node->left != nullptr) node->left = balanceTree(node->left);
+
+    return node;
+  }
+
+  int calculateHeight(node_t* node) {
+    if (node->right != nullptr && node->left != nullptr) {
+      if (node->left->height < node->right->height)
+        return node->right->height + 1;
+      else
+        return node->left->height + 1;
+    } else if (node->left && node->right == nullptr)
+      return node->left->height + 1;
+    else if (node->right && node->left == nullptr)
+      return node->right->height + 1;
+    else
+      return 0;
+  }
+
+  void allHeight(node_t* node) {
+    if (node->right != nullptr) allHeight(node->right);
+    if (node->left != nullptr) allHeight(node->left);
+    node->height = calculateHeight(node);
+  }
+
+  int weight(node_t* node) {
+    if (node->left && node->right) {
+      return node->left->height - node->right->height;
+    } else if (node->left && node->right == NULL) {
+      return node->left->height;
+    } else if (node->left == NULL && node->right) {
+      return node->right->height;
+    } else
+      return 0;
+  }
+
+  node_t* doRightRotationSimple(node_t* node) {
+    node_t* temp = node->left;
+    node->left = temp->right;
+    temp->right = node;
+    return temp;
+  }
+
+  node_t* doLeftRotationSimple(node_t* node) {
+    node_t* temp = node->right;
+    node->right = temp->left;
+    temp->left = node;
+    return temp;
+  }
+
+  node_t* doLeftRightRotation(node_t* node) {
+    node->left = doLeftRotationSimple(node->left);
+    return doRightRotationSimple(node);
+  }
+
+  node_t* doRightLeftRotation(node_t* node) {
+    node->right = doRightRotationSimple(node->right);
+    return doLeftRotationSimple(node);
+  }
+
+  void printTree(node_t* node, int contador) {
+    if (node == nullptr)
+      return;
+    else {
+      printTree(node->right, contador + 1);
+      for (int i = 0; i < contador; i++) {
+        std::cout << "         ";
+      }
+      std::cout << node->key << " , " << node->height << std::endl;
+      printTree(node->left, contador + 1);
     }
   }
 
@@ -97,76 +184,6 @@ class RangeTree {
       range.push_back(elem);
     }
     return range;
-  }
-
-  void balanceTree() { calculateWeight(head); }
-
-  void doRightRotationSimple(node_t* node) {
-    node_t* temp = node->right;
-    node->right = temp->left;
-    temp->left = node;
-    node = temp;
-  }
-
-  void doLeftRotationSimple(node_t* node) {
-    node_t* temp = node->left;
-    node->left = temp->right;
-    temp->right = node;
-    node = temp;
-  }
-
-  void doLeftRightRotation(node_t* node) {
-    doLeftRotationSimple(node->left);
-    doRightRotationSimple(node);
-  }
-
-  void doRightLeftRotation(node_t* node) {
-    doRightRotationSimple(node->right);
-    doLeftRotationSimple(node);
-  }
-
-  int calculateWeight(node_t* node) {
-    int weight;
-    int max = 0;
-    int left = 0;
-    int right = 0;
-    if (node->right != nullptr) {
-      right = calculateWeight(node->right);
-    }
-    if (node->left != nullptr) {
-      left = calculateWeight(node->left);
-    }
-
-    // hallamos el peso
-    if (node->left == nullptr && node->right == nullptr) {
-      weight = 0;
-    } else {
-      weight = left - right;
-    }
-
-    // balanceamos de acuerdo al signo del peso y del nodo que le sigue
-    if (weight <= -2) {
-      if (lastWeight == '-')
-        doLeftRotationSimple(node);
-      else
-        doLeftRightRotation(node);
-    } else if (weight >= 2) {
-      if (lastWeight == '+')
-        doRightRotationSimple(node);
-      else
-        doRightLeftRotation(node);
-    }
-
-    // hallamos la cantidad de nodos maximos y guardamos el ultimo signo
-    if (right > left) {
-      max = right + 1;
-      lastWeight = '-';
-    } else {
-      max = left + 1;
-      lastWeight = '+';
-    }
-
-    return max;
   }
 
   node_t* findAncient(node_t* node, key_t min, key_t max) {
