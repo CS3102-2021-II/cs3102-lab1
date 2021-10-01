@@ -211,7 +211,7 @@ class RangeTree {
       } else if (min.get(0) > node->key.get(0)) {
         node = node->right;
       }
-      if (node != nullptr && min == node->key && node->left == nullptr) {
+      if (node != nullptr && node->left == nullptr) {
         rangeLeft.push_back(node->key);
         node = node->left;
       }
